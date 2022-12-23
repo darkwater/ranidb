@@ -4,6 +4,7 @@ use nom::{
     sequence::separated_pair,
     IResult,
 };
+use thiserror::Error;
 
 macro_rules! parser {
     ( $name:ident { $( $items:tt )* } ) => {
@@ -24,15 +25,13 @@ macro_rules! parser {
     };
 
     ( @structdef $sname:ident ( $_:literal $( $rest:tt )* )
-      => ( $( $member:ident: $mty:ty, )* ) ) =>
-    {
+      => ( $( $member:ident: $mty:ty, )* ) ) => {
         parser!( @structdef $sname ( $($rest)* )
             => ( $( $member: $mty, )* ) );
     };
 
     ( @structdef $sname:ident ( { $name:ident: $ty:ty } $( $rest:tt )* )
-      => ( $( $member:ident: $mty:ty, )* ) ) =>
-    {
+      => ( $( $member:ident: $mty:ty, )* ) ) => {
         parser!( @structdef $sname ( $($rest)* )
             => ( $name: $ty, $( $member: $mty, )* ) );
     };
@@ -127,20 +126,21 @@ macro_rules! match_res {
     };
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Error, PartialEq)]
 pub enum Error {
+    #[error("Login failed")]
     LoginFailed,
+    #[error("Client version outdated")]
     ClientVersionOutdated,
+    #[error("Unknown error: {0} {1}")]
     Other(u16, String),
+    #[error("Unknown error: {0}")]
     Unknown(String),
 }
 
 fn status_code(s: &str) -> IResult<&str, (u16, &str)> {
     separated_pair(
-        map(
-            take_while_m_n(3, 3, |c: char| c.is_ascii_digit()),
-            |s: &str| s.parse().unwrap(),
-        ),
+        map(take_while_m_n(3, 3, |c: char| c.is_ascii_digit()), |s: &str| s.parse().unwrap()),
         tag(" "),
         take_till1(|c| c == '\n'),
     )(s)
@@ -168,13 +168,7 @@ mod tests {
 
     #[test]
     fn some_errors() {
-        assert_eq!(
-            Error::parse_from("500 LOGIN FAILED"),
-            Error::LoginFailed,
-        );
-        assert_eq!(
-            Error::parse_from("503 CLIENT VERSION OUTDATED"),
-            Error::ClientVersionOutdated,
-        );
+        assert_eq!(Error::parse_from("500 LOGIN FAILED"), Error::LoginFailed,);
+        assert_eq!(Error::parse_from("503 CLIENT VERSION OUTDATED"), Error::ClientVersionOutdated,);
     }
 }

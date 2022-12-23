@@ -1,8 +1,9 @@
 use std::{io, string::FromUtf8Error, time::Duration};
 
-use crate::command_builder::CommandBuilder;
-
+use thiserror::Error;
 use tokio::{net::UdpSocket, time::Instant};
+
+use crate::command_builder::CommandBuilder;
 
 mod command_builder;
 #[macro_use]
@@ -12,30 +13,16 @@ pub use responses::*;
 
 type RadResult<T> = Result<T, Error>;
 
-#[derive(Debug)]
+#[derive(Debug, Error)]
 pub enum Error {
-    Io(io::Error),
-    Encoding(FromUtf8Error),
-    AniDb(responses::Error),
+    #[error("IO Error: {0}")]
+    Io(#[from] io::Error),
+    #[error("Invalid UTF-8: {0}")]
+    Encoding(#[from] FromUtf8Error),
+    #[error("AniDB Error: {0}")]
+    AniDb(#[from] responses::Error),
+    #[error("Not logged in")]
     NoSession,
-}
-
-impl From<io::Error> for Error {
-    fn from(e: io::Error) -> Self {
-        Error::Io(e)
-    }
-}
-
-impl From<FromUtf8Error> for Error {
-    fn from(e: FromUtf8Error) -> Self {
-        Error::Encoding(e)
-    }
-}
-
-impl From<responses::Error> for Error {
-    fn from(e: responses::Error) -> Self {
-        Error::AniDb(e)
-    }
 }
 
 pub struct AniDb {

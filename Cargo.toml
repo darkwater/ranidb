@@ -1,13 +1,15 @@
 [package]
 name = "ranidb"
 version = "0.1.0"
-authors = ["Sam Lakerveld <dark@dark.red>"]
+authors = [ "Sam Lakerveld <dark@dark.red>" ]
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-log = "*"
-nom = "7.1.1"
-rand = "0.8.5"
-tokio = { version = "1.17.0", features = [ "net", "time" ] }
+anyhow = "1.0.68"
+log    = "*"
+nom    = "7.1.1"
+rand   = "0.8.5"
+thiserror = "1.0.38"
+tokio  = { version = "1.17.0", features = [ "net", "time" ] }
